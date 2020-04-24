@@ -26,18 +26,25 @@ namespace SwissTransport
         [JsonProperty("station")]
         public Station Station { get; set; }
 
+        [JsonProperty("arrival")]
         public string Arrival { get; set; }
 
+        [JsonProperty("arrivaltimestamp")]
         public string ArrivalTimestamp { get; set; }
 
+        [JsonProperty("departure")]
         public string Departure { get; set; }
 
+        [JsonProperty("departuretimestamp")]
         public string DepartureTimestamp { get; set; }
 
+        [JsonProperty("delay")]
         public int? Delay { get; set; }
 
+        [JsonProperty("platform")]
         public string Platform { get; set; }
 
+        [JsonProperty("realtimeavailability")]
         public string RealtimeAvailability { get; set; }
     }
 }
