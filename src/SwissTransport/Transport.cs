@@ -5,24 +5,26 @@ using Newtonsoft.Json;
 
 namespace SwissTransport
 {
-    public class Transport : ITransport
+  
+public class Transport : ITransport
     {
+       
         public Stations GetStations(string query)
         {
-            query = System.Uri.EscapeDataString(query);
-            var request = CreateWebRequest("http://transport.opendata.ch/v1/locations?query=" + query);
-            var response = request.GetResponse();
-            var responseStream = response.GetResponseStream();
+                query = System.Uri.EscapeDataString(query);
+                var request = CreateWebRequest("http://transport.opendata.ch/v1/locations?query=" + query);
+                var response = request.GetResponse();
+                var responseStream = response.GetResponseStream();
 
-            if (responseStream != null)
-            {
-                var message = new StreamReader(responseStream).ReadToEnd();
-                var stations = JsonConvert.DeserializeObject<Stations>(message
-                    , new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-                return stations;
-            }
+                if (responseStream != null)
+                {
+                    var message = new StreamReader(responseStream).ReadToEnd();
+                    var stations = JsonConvert.DeserializeObject<Stations>(message
+                        , new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                    return stations;
+                }
 
-            return null;
+                return null;
         }
 
         public StationBoardRoot GetStationBoard(string station)
@@ -44,11 +46,22 @@ namespace SwissTransport
             return null;
         }
 
-        public Connections GetConnections(string fromStation, string toStation)
+        public Connections GetConnections(string fromStation, string toStation, DateTime date, DateTime time, Boolean aaradiobutton)
         {
             fromStation = System.Uri.EscapeDataString(fromStation);
             toStation = System.Uri.EscapeDataString(toStation);
-            var request = CreateWebRequest("http://transport.opendata.ch/v1/connections?from=" + fromStation + "&to=" + toStation);
+            string datestring = date.ToString("yyyy-MM-dd");
+            string timestring = time.ToString("HH:mm");
+            string aaradiobuttonstring;
+            if (aaradiobutton == true)
+            {
+                aaradiobuttonstring = System.Uri.EscapeDataString("1");
+            }
+            else
+            {
+                aaradiobuttonstring = System.Uri.EscapeDataString("0");
+            }
+            var request = CreateWebRequest("http://transport.opendata.ch/v1/connections?from=" + fromStation + "&to=" + toStation + "&date=" + datestring + "&time=" + timestring + "&isArrivalTime=" + aaradiobuttonstring);
             var response = request.GetResponse();
             var responseStream = response.GetResponseStream();
 

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -31,34 +32,6 @@ namespace MySwissTranport
             connection = new Connection();
             connectionpoint = new ConnectionPoint();
 
-
-            //Uhrzeiten der ComboBox
-            comboBoxZeit.Items.Add("00:00");
-            comboBoxZeit.Items.Add("01:00");
-            comboBoxZeit.Items.Add("02:00");
-            comboBoxZeit.Items.Add("03:00");
-            comboBoxZeit.Items.Add("04:00");
-            comboBoxZeit.Items.Add("05:00");
-            comboBoxZeit.Items.Add("06:00");
-            comboBoxZeit.Items.Add("07:00");
-            comboBoxZeit.Items.Add("08:00");
-            comboBoxZeit.Items.Add("09:00");
-            comboBoxZeit.Items.Add("10:00");
-            comboBoxZeit.Items.Add("11:00");
-            comboBoxZeit.Items.Add("12:00");
-            comboBoxZeit.Items.Add("13:00");
-            comboBoxZeit.Items.Add("14:00");
-            comboBoxZeit.Items.Add("15:00");
-            comboBoxZeit.Items.Add("16:00");
-            comboBoxZeit.Items.Add("17:00");
-            comboBoxZeit.Items.Add("18:00");
-            comboBoxZeit.Items.Add("19:00");
-            comboBoxZeit.Items.Add("20:00");
-            comboBoxZeit.Items.Add("21:00");
-            comboBoxZeit.Items.Add("22:00");
-            comboBoxZeit.Items.Add("23:00");
-
-            comboBoxZeit.DropDownStyle = ComboBoxStyle.DropDownList;
         }
 
 
@@ -68,19 +41,36 @@ namespace MySwissTranport
             Stations StartStation = transport.GetStations(textBoxVon.Text);
             Stations EndStation = transport.GetStations(textBoxNach.Text);
 
+            //Löschen von vorherigen ListBoxen und Labelnamen
+            listBoxAbfahrt.Items.Clear();
+            listBoxAnkunft.Items.Clear();
+            listBoxDauer.Items.Clear();
+            dataGridViewFahrplan.Rows.Clear();
+            labelNach2.Text = " ";
+            labelEnd.Text = " ";
+            labelVon2.Text = " ";
+            labelStart.Text = " ";
+            labelStation.Text = " ";
+            labelStationName.Text = " ";
+
+            if (textBoxNach.Text == textBoxVon.Text)
+            {
+                MessageBox.Show("Es wurde zweimal die gleiche Station ausgewählt.");
+            }
+
             if (StartStation.StationList.Count > 0 && EndStation.StationList.Count <= 0)
             {
-                //Anzeige welcher Fahrplan gewählt wurde
-                labelNach2.Text = " ";
-                labelEnd.Text = " ";
-                labelVon2.Text = "Station:";
-                labelStart.Text = StartStation.StationList[0].Name;
+                //Label Änderungen
+                labelStation.Text = "Station:";
+                labelStationName.Text = StartStation.StationList[0].Name;
 
-                var stations = transport.GetStationBoard(StartStation.StationList[0].Name);
-                foreach (var station in stations.Entries)
+                
+                var stationboardroot = transport.GetStationBoard(StartStation.StationList[0].Name);
+                foreach (var stationboard in stationboardroot.Entries)
                 {
-                    //listBoxFahrplan.Items.Add();
+                    dataGridViewFahrplan.Rows.Add(stationboard.Category, stationboard.To);
                 }
+
             }
 
             else
@@ -94,27 +84,18 @@ namespace MySwissTranport
                     labelStart.Text = StartStation.StationList[0].Name;
                     labelEnd.Text = EndStation.StationList[0].Name;
 
-                    //Löschen von vorherigen ListBoxen
-                    listBoxAbfahrt.Items.Clear();
-                    listBoxAnkunft.Items.Clear();
-                    listBoxDauer.Items.Clear();
-
-                    Connections Departure = transport.GetConnections(StartStation.StationList[0].Name, EndStation.StationList[0].Name);
+                    //Alle Ausgaben
+                    Connections Departure = transport.GetConnections(StartStation.StationList[0].Name, EndStation.StationList[0].Name, dateTimePickerDatum.Value, dateTimePickerUhrzeit.Value, Convert.ToBoolean(radioButtonAbfahrt.Checked));
                     foreach (var connectionpoint in Departure.ConnectionList)
                     {
-                        listBoxAbfahrt.Items.Add(connectionpoint.From.Departure);
+                        listBoxAbfahrt.Items.Add(connectionpoint.From.Departure.Remove(0, 11).Remove(5, 8));
                     }
 
-                    Connections Arrival = transport.GetConnections(StartStation.StationList[0].Name, EndStation.StationList[0].Name);
+                    Connections Arrival = transport.GetConnections(StartStation.StationList[0].Name, EndStation.StationList[0].Name, dateTimePickerDatum.Value, dateTimePickerUhrzeit.Value, Convert.ToBoolean(radioButtonAnkunft.Checked));
                     foreach (var connectionpoint in Arrival.ConnectionList)
                     {
-                        listBoxAnkunft.Items.Add(connectionpoint.To.Arrival);
-                    }
-
-                    Connections Duration = transport.GetConnections(StartStation.StationList[0].Name, EndStation.StationList[0].Name);
-                    foreach (Connection connection in Duration.ConnectionList)
-                    {
-                        listBoxDauer.Items.Add(connection.Duration);
+                        listBoxAnkunft.Items.Add(connectionpoint.To.Arrival.Remove(0, 11).Remove(5, 8));
+                        listBoxDauer.Items.Add(connectionpoint.Duration.Remove(0, 3).Remove(2, 6) + "h " + connectionpoint.Duration.Remove(0, 6).Remove(2, 3) + "m");
                     }
                 }
 
@@ -122,6 +103,7 @@ namespace MySwissTranport
                 {
                     MessageBox.Show("Bitte beachten Sie, dass der Startort immer angegeben werden muss!"); //Error Nachricht, wenn keine Stationen eingegeben wurden
                 }
+
             }
             //Löschen von vorherigen Eingaben
             textBoxVon.Clear();
@@ -131,6 +113,7 @@ namespace MySwissTranport
 
         private void textBoxVon_TextChanged(object sender, EventArgs e)
         {
+            //anzeigen von vorschlägen
             listBoxDropDownVon.Items.Clear();
             Stations Vorschlag = transport.GetStations(textBoxVon.Text);
 
@@ -143,6 +126,7 @@ namespace MySwissTranport
 
         private void textBoxNach_TextChanged(object sender, EventArgs e)
         {
+            //anzeigen von vorschlägen
             listBoxDropDownNach.Items.Clear();
             Stations Vorschlag = transport.GetStations(textBoxNach.Text);
 
@@ -183,9 +167,6 @@ namespace MySwissTranport
             textBoxNach.BackColor = Color.White;
             textBoxNach.ForeColor = Color.Black;
 
-            comboBoxZeit.BackColor = Color.White;
-            comboBoxZeit.ForeColor = Color.Black;
-
             listBoxAbfahrt.BackColor = Color.White;
             listBoxAbfahrt.ForeColor = Color.Black;
 
@@ -201,8 +182,8 @@ namespace MySwissTranport
             listBoxDropDownNach.BackColor = Color.White;
             listBoxDropDownNach.ForeColor = Color.Black;
 
-            listBoxFahrplan.BackColor = Color.White;
-            listBoxFahrplan.ForeColor = Color.Black;
+            dataGridViewFahrplan.BackgroundColor = Color.White;
+            dataGridViewFahrplan.ForeColor = Color.Black;
 
             labelVon2.BackColor = Color.White;
             labelVon2.ForeColor = Color.Black;
@@ -242,9 +223,6 @@ namespace MySwissTranport
             textBoxNach.BackColor = Color.FromArgb(255, 195, 216);
             textBoxNach.ForeColor = Color.Black;
 
-            comboBoxZeit.BackColor = Color.FromArgb(255, 195, 216);
-            comboBoxZeit.ForeColor = Color.Black;
-
             listBoxAbfahrt.BackColor = Color.FromArgb(255, 195, 216);
             listBoxAbfahrt.ForeColor = Color.Black;
 
@@ -260,8 +238,8 @@ namespace MySwissTranport
             listBoxDropDownNach.BackColor = Color.FromArgb(255, 195, 216);
             listBoxDropDownNach.ForeColor = Color.Black;
 
-            listBoxFahrplan.BackColor = Color.FromArgb(255, 195, 216);
-            listBoxFahrplan.ForeColor = Color.Black;
+            dataGridViewFahrplan.BackgroundColor = Color.FromArgb(255, 195, 216);
+            dataGridViewFahrplan.ForeColor = Color.Black;
 
             labelVon2.BackColor = Color.FromArgb(255, 195, 216);
             labelVon2.ForeColor = Color.Black;
@@ -301,9 +279,6 @@ namespace MySwissTranport
             textBoxNach.BackColor = Color.FromArgb(23, 24, 28);
             textBoxNach.ForeColor = Color.White;
 
-            comboBoxZeit.BackColor = Color.FromArgb(23, 24, 28);
-            comboBoxZeit.ForeColor = Color.White;
-
             listBoxAbfahrt.BackColor = Color.FromArgb(30, 32, 36);
             listBoxAbfahrt.ForeColor = Color.White;
 
@@ -319,8 +294,8 @@ namespace MySwissTranport
             listBoxDropDownNach.BackColor = Color.FromArgb(30, 32, 36);
             listBoxDropDownNach.ForeColor = Color.White;
 
-            listBoxFahrplan.BackColor = Color.FromArgb(30, 32, 36);
-            listBoxFahrplan.ForeColor = Color.White;
+            dataGridViewFahrplan.BackgroundColor = Color.FromArgb(30, 32, 36);
+            dataGridViewFahrplan.ForeColor = Color.White;
 
             labelVon2.BackColor = Color.FromArgb(30, 32, 36);
             labelVon2.ForeColor = Color.White;
@@ -338,5 +313,6 @@ namespace MySwissTranport
         {
             textBoxNach.Text = Convert.ToString(listBoxDropDownNach.SelectedItem);
         }
+
     }
 }
